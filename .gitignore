@@ -44,6 +44,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Arquivos de planejamento e ferramentas de editor
-.claude/
+# Documento de especificacao da atividade (nao faz parte do app)
 SPEC-ProfGuess.md
