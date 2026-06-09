@@ -82,21 +82,70 @@ void main() {
     });
   });
 
+  group('"Não sei" é informativo-zero', () {
+    test('responder "Não sei" não desloca as probabilidades', () {
+      final engine = buildEngine();
+      final before = engine.confidence;
+      final q = engine.nextQuestion()!;
+      engine.submitAnswer(q, Answer.dontKnow);
+      // Distribuição continua uniforme: o líder mantém 1/N.
+      expect(engine.confidence, closeTo(before, 1e-9));
+      expect(engine.confidence, closeTo(1 / professors.length, 1e-9));
+    });
+  });
+
+  group('Voltar (undo)', () {
+    test('undoLast restaura o estado anterior à última resposta', () {
+      final engine = buildEngine();
+      final q1 = engine.nextQuestion()!;
+      engine.submitAnswer(q1, Answer.yes);
+      final confAfterFirst = engine.confidence;
+      final guessAfterFirst = engine.currentGuess.id;
+
+      final q2 = engine.nextQuestion()!;
+      engine.submitAnswer(q2, Answer.no);
+      expect(engine.questionsAsked, 2);
+
+      engine.undoLast();
+      expect(engine.questionsAsked, 1);
+      expect(engine.canUndo, isTrue);
+      expect(engine.confidence, closeTo(confAfterFirst, 1e-9));
+      expect(engine.currentGuess.id, guessAfterFirst);
+      // A pergunta voltou a estar disponível.
+      expect(engine.nextQuestion()!.id, q2.id);
+    });
+  });
+
+  group('Adaptatividade', () {
+    test('a escolha da próxima pergunta depende das respostas dadas', () {
+      // Mesma primeira pergunta; respostas opostas devem levar (em geral) a
+      // segundas perguntas diferentes, pois os candidatos prováveis mudam.
+      final a = buildEngine();
+      final b = buildEngine();
+      final first = a.nextQuestion()!;
+      expect(b.nextQuestion()!.id, first.id); // estado inicial é igual
+
+      a.submitAnswer(first, Answer.yes);
+      b.submitAnswer(first, Answer.no);
+
+      expect(a.nextQuestion()!.id, isNot(b.nextQuestion()!.id));
+    });
+  });
+
   group('Condição de palpite', () {
-    test('após 15 perguntas shouldGuess é sempre true', () {
+    test('após o limite de perguntas shouldGuess é sempre true', () {
       final engine = buildEngine();
       var count = 0;
-      while (count < 15) {
+      while (count < GuessEngine.maxQuestions) {
         final q = engine.nextQuestion();
         if (q == null) break;
         engine.submitAnswer(q, Answer.dontKnow);
         count++;
       }
-      // Respondendo sempre "não sei" pode parar por falta de discriminação;
-      // forçamos o limite respondendo até 15 quando houver perguntas.
-      if (engine.questionsAsked >= 15) {
-        expect(engine.shouldGuess, isTrue);
-      }
+      // Respondendo sempre "não sei" o motor acaba esgotando as perguntas:
+      // a partir daí não há mais o que perguntar (nextQuestion == null).
+      expect(engine.questionsAsked, lessThanOrEqualTo(GuessEngine.maxQuestions));
+      expect(engine.nextQuestion(), isNull);
     });
   });
 

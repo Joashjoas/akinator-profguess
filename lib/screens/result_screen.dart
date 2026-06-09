@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../controllers/game_controller.dart';
+import '../theme/app_theme.dart';
 import '../widgets/mascot.dart';
 
 /// Tela final. Tem três variações dependendo do estado:
@@ -48,11 +49,24 @@ class ResultScreen extends StatelessWidget {
         'Você está pensando em...',
         style: TextStyle(fontSize: 18, color: Colors.white70),
       ),
-      const SizedBox(height: 8),
-      Text(
-        '${controller.currentGuess.name}!',
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+      const SizedBox(height: 16),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColors.glass,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.glassBorder),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '${controller.currentGuess.name}!',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+            ),
+            ..._reasons(),
+          ],
+        ),
       ),
       const SizedBox(height: 32),
       Row(
@@ -111,6 +125,25 @@ class ResultScreen extends StatelessWidget {
       ),
       const SizedBox(height: 32),
       _playAgainButton(),
+    ];
+  }
+
+  /// Lista as características que levaram ao palpite ("Você disse que ele...").
+  List<Widget> _reasons() {
+    final reasons = controller.guessReasons;
+    if (reasons.isEmpty) return const [];
+    return [
+      const SizedBox(height: 20),
+      const Text(
+        'Você disse que ele(a):',
+        style: TextStyle(fontSize: 14, color: Colors.white54),
+      ),
+      const SizedBox(height: 6),
+      Text(
+        '• ${reasons.join('\n• ')}',
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 15, color: Colors.white70, height: 1.5),
+      ),
     ];
   }
 

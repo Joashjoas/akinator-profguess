@@ -3,189 +3,123 @@ import '../models/question.dart';
 
 /// Base de conhecimento do jogo: perguntas e o perfil de cada professor.
 ///
-/// Os valores da matriz são uma primeira calibração feita pelo grupo e podem
-/// (e devem) ser ajustados depois de algumas partidas de teste. A escala é:
-///   1.0  = sim, com certeza
-///   0.75 = provavelmente sim
-///   0.5  = não se aplica / depende / incerto
-///   0.25 = provavelmente não
-///   0.0  = não, com certeza
+/// MODELAGEM POR TAGS
+/// ------------------
+/// Em vez de uma matriz com um valor para cada par (professor, pergunta) — que
+/// ficava enorme e cheia de zeros — cada professor declara apenas as perguntas
+/// que responde "sim". Tudo o que não está na lista é tratado como "não".
 ///
-/// Todas as perguntas tratam apenas de características neutras e observáveis,
-/// como exige a atividade.
+/// Para adicionar/editar um professor, basta mexer na lista de ids dele em
+/// [_profiles]; para uma pergunta nova, acrescente em [questions] e cite o id
+/// nos professores que a possuem. Não há mais valores soltos para errar.
+///
+/// O motor de inferência continua trabalhando com probabilidades no intervalo
+/// [0,1], então a conversão tag → perfil usa 1.0 (sim) e 0.0 (não). Se um dia
+/// quiserem um "meio-termo" para alguma característica, dá para trocar o
+/// `Set<String>` por um `Map<String,double>` que [_buildProfile] já aceitaria.
 
 const List<Question> questions = [
-  Question(id: 'q01', text: 'O professor que você está pensando usa óculos?'),
-  Question(id: 'q02', text: 'Esse professor tem barba?'),
-  Question(id: 'q03', text: 'Esse professor tem cabelo curto?'),
-  Question(id: 'q04', text: 'Costuma usar camisa social nas aulas?'),
-  Question(id: 'q05', text: 'Costuma usar camiseta nas aulas?'),
-  Question(id: 'q06', text: 'Usa slides com frequência nas aulas?'),
-  Question(id: 'q07', text: 'Escreve bastante no quadro?'),
-  Question(id: 'q08', text: 'Costuma dar aula em laboratório?'),
-  Question(id: 'q09', text: 'Passa muitos exercícios práticos?'),
-  Question(id: 'q10', text: 'Costuma trabalhar com projetos nas disciplinas?'),
-  Question(id: 'q11', text: 'Gosta de discutir código ao vivo durante a aula?'),
-  Question(id: 'q12', text: 'Usa muitos exemplos práticos do dia a dia?'),
-  Question(id: 'q13', text: 'Fala bastante sobre mercado de trabalho?'),
-  Question(id: 'q14', text: 'Cobra bastante organização nas entregas?'),
-  Question(id: 'q15', text: 'Trabalha com programação?'),
-  Question(id: 'q16', text: 'Trabalha com banco de dados?'),
-  Question(id: 'q17', text: 'Trabalha com redes de computadores?'),
-  Question(id: 'q18', text: 'Trabalha com engenharia de software?'),
-  Question(id: 'q19', text: 'Trabalha com matemática ou lógica?'),
-  Question(id: 'q20', text: 'Trabalha com gestão ou áreas administrativas?'),
+  Question(id: 'q01', text: 'O professor que você está pensando usa óculos?', trait: 'usa óculos'),
+  Question(id: 'q02', text: 'Esse professor tem barba?', trait: 'tem barba'),
+  Question(id: 'q03', text: 'Esse professor tem cabelo curto?', trait: 'tem cabelo curto'),
+  Question(id: 'q04', text: 'Esse professor tem cabelo comprido?', trait: 'tem cabelo comprido'),
+  Question(id: 'q05', text: 'Costuma usar camiseta nas aulas?', trait: 'costuma usar camiseta'),
+  Question(id: 'q06', text: 'Costuma usar camisa social nas aulas?', trait: 'costuma usar camisa social'),
+  Question(id: 'q07', text: 'Fala bastante sobre mercado de trabalho?', trait: 'fala sobre mercado de trabalho'),
+  Question(id: 'q08', text: 'Gosta de trabalhar seminários com os alunos?', trait: 'trabalha com seminários'),
+  Question(id: 'q09', text: 'Passa exercícios em laboratório?', trait: 'passa exercícios em laboratório'),
+  Question(id: 'q10', text: 'Escreve bastante no quadro?', trait: 'escreve bastante no quadro'),
+  Question(id: 'q11', text: 'Costuma trabalhar os alunos com projetos?', trait: 'trabalha com projetos'),
+  Question(id: 'q12', text: 'Trabalha com programação?', trait: 'trabalha com programação'),
+  Question(id: 'q13', text: 'Trabalha como gestor?', trait: 'trabalha como gestor'),
+  Question(id: 'q14', text: 'Trabalha com redes?', trait: 'trabalha com redes'),
 ];
 
-const List<Professor> professors = [
-  Professor(
-    id: 'fabiane',
-    name: 'Fabiane',
-    answerProfile: {
-      'q01': 0.75, 'q02': 0.0, 'q03': 0.25, 'q04': 0.75, 'q05': 0.25,
-      'q06': 1.0, 'q07': 0.5, 'q08': 0.25, 'q09': 0.5, 'q10': 0.5,
-      'q11': 0.0, 'q12': 0.75, 'q13': 0.75, 'q14': 1.0, 'q15': 0.0,
-      'q16': 0.0, 'q17': 0.0, 'q18': 0.25, 'q19': 0.25, 'q20': 1.0,
-    },
+/// Cada entrada é `id do professor` -> (nome, conjunto de perguntas "sim").
+/// A ordem aqui também é a ordem de desempate do palpite.
+const Map<String, ({String name, Set<String> yes})> _profiles = {
+  'jeferson_vorpagel': (
+    name: 'Jefferson dos Santos Vorpagel',
+    yes: {'q02', 'q06', 'q07', 'q08', 'q11', 'q13'},
   ),
-  Professor(
-    id: 'jefferson_speck',
-    name: 'Jefferson Speck',
-    answerProfile: {
-      'q01': 0.75, 'q02': 1.0, 'q03': 0.75, 'q04': 0.25, 'q05': 0.75,
-      'q06': 0.5, 'q07': 0.5, 'q08': 1.0, 'q09': 0.75, 'q10': 0.5,
-      'q11': 0.5, 'q12': 0.5, 'q13': 0.5, 'q14': 0.5, 'q15': 0.5,
-      'q16': 0.25, 'q17': 1.0, 'q18': 0.25, 'q19': 0.25, 'q20': 0.0,
-    },
+  'willian': (
+    name: 'Willian Douglas Ferrari Mendonça',
+    yes: {'q01', 'q02', 'q03', 'q05', 'q11', 'q12'},
   ),
-  Professor(
-    id: 'jhoni',
-    name: 'Jhoni',
-    answerProfile: {
-      'q01': 0.5, 'q02': 0.75, 'q03': 0.5, 'q04': 0.25, 'q05': 1.0,
-      'q06': 0.25, 'q07': 0.5, 'q08': 0.5, 'q09': 1.0, 'q10': 0.75,
-      'q11': 1.0, 'q12': 1.0, 'q13': 0.75, 'q14': 0.25, 'q15': 1.0,
-      'q16': 0.5, 'q17': 0.0, 'q18': 0.5, 'q19': 0.5, 'q20': 0.0,
-    },
+  'marcos_guido': (
+    name: 'Marcos Antonio Guido',
+    yes: {'q03', 'q06', 'q08', 'q09', 'q10', 'q13', 'q14'},
   ),
-  Professor(
-    id: 'willian',
-    name: 'Willian',
-    answerProfile: {
-      'q01': 1.0, 'q02': 0.25, 'q03': 0.75, 'q04': 0.5, 'q05': 0.5,
-      'q06': 0.75, 'q07': 0.5, 'q08': 0.5, 'q09': 0.75, 'q10': 0.5,
-      'q11': 0.25, 'q12': 0.5, 'q13': 0.5, 'q14': 0.75, 'q15': 0.5,
-      'q16': 1.0, 'q17': 0.25, 'q18': 0.5, 'q19': 0.25, 'q20': 0.0,
-    },
+  'jefferson_speck': (
+    name: 'Jefferson Rodrigo Speck',
+    yes: {'q01', 'q02', 'q05', 'q07', 'q08', 'q10', 'q11', 'q12'},
   ),
-  Professor(
-    id: 'guilherme_alves',
+  'guilherme_alves': (
     name: 'Guilherme Alves',
-    answerProfile: {
-      'q01': 0.75, 'q02': 0.5, 'q03': 0.75, 'q04': 0.5, 'q05': 0.25,
-      'q06': 0.75, 'q07': 0.25, 'q08': 0.5, 'q09': 0.5, 'q10': 1.0,
-      'q11': 0.5, 'q12': 0.5, 'q13': 0.75, 'q14': 1.0, 'q15': 0.75,
-      'q16': 0.5, 'q17': 0.25, 'q18': 1.0, 'q19': 0.25, 'q20': 0.5,
-    },
+    yes: {'q01', 'q05', 'q07', 'q10', 'q11', 'q12'},
   ),
-  Professor(
-    id: 'marcos_guido',
-    name: 'Marcos Guido',
-    answerProfile: {
-      'q01': 0.75, 'q02': 0.25, 'q03': 0.75, 'q04': 0.5, 'q05': 0.5,
-      'q06': 0.25, 'q07': 1.0, 'q08': 0.25, 'q09': 1.0, 'q10': 0.25,
-      'q11': 0.25, 'q12': 0.5, 'q13': 0.25, 'q14': 0.75, 'q15': 0.25,
-      'q16': 0.0, 'q17': 0.0, 'q18': 0.25, 'q19': 1.0, 'q20': 0.0,
-    },
+  'andre_dorr': (
+    name: 'André Luis Dorr',
+    yes: {'q01', 'q02', 'q05'},
   ),
-  Professor(
-    id: 'leticia',
-    name: 'Letícia',
-    answerProfile: {
-      'q01': 0.5, 'q02': 0.0, 'q03': 0.25, 'q04': 1.0, 'q05': 0.0,
-      'q06': 1.0, 'q07': 0.25, 'q08': 0.0, 'q09': 0.5, 'q10': 0.75,
-      'q11': 0.0, 'q12': 0.75, 'q13': 1.0, 'q14': 1.0, 'q15': 0.0,
-      'q16': 0.0, 'q17': 0.0, 'q18': 0.25, 'q19': 0.25, 'q20': 1.0,
-    },
+  'leticia': (
+    name: 'Letícia Siguinolfi de Lima',
+    yes: {'q01', 'q04', 'q05', 'q07'},
   ),
-  Professor(
-    id: 'jeferson_vorpagel',
-    name: 'Jeferson Vorpagel',
-    answerProfile: {
-      'q01': 0.5, 'q02': 0.5, 'q03': 0.5, 'q04': 0.25, 'q05': 0.75,
-      'q06': 0.25, 'q07': 0.75, 'q08': 0.75, 'q09': 1.0, 'q10': 0.5,
-      'q11': 0.75, 'q12': 0.75, 'q13': 0.5, 'q14': 0.5, 'q15': 1.0,
-      'q16': 0.5, 'q17': 0.25, 'q18': 0.5, 'q19': 0.5, 'q20': 0.0,
-    },
+  'marcel': (
+    name: 'Marcel Augusto Colling',
+    yes: {'q02', 'q06', 'q07', 'q08'},
   ),
-  Professor(
-    id: 'andre_dorr',
-    name: 'André Dorr',
-    answerProfile: {
-      'q01': 0.5, 'q02': 0.5, 'q03': 0.5, 'q04': 0.25, 'q05': 1.0,
-      'q06': 0.5, 'q07': 0.5, 'q08': 1.0, 'q09': 0.75, 'q10': 0.5,
-      'q11': 0.75, 'q12': 0.5, 'q13': 0.5, 'q14': 0.5, 'q15': 0.75,
-      'q16': 0.25, 'q17': 1.0, 'q18': 0.5, 'q19': 0.25, 'q20': 0.0,
-    },
+  'fabiano': (
+    name: 'Fabiano do Carmo Dicheti',
+    yes: {'q01', 'q02', 'q05', 'q07', 'q10', 'q11', 'q12'},
   ),
-  Professor(
-    id: 'renato',
-    name: 'Renato',
-    answerProfile: {
-      'q01': 0.75, 'q02': 0.5, 'q03': 0.75, 'q04': 0.75, 'q05': 0.25,
-      'q06': 0.75, 'q07': 0.5, 'q08': 0.5, 'q09': 1.0, 'q10': 0.5,
-      'q11': 0.25, 'q12': 0.5, 'q13': 0.5, 'q14': 1.0, 'q15': 0.5,
-      'q16': 1.0, 'q17': 0.25, 'q18': 0.25, 'q19': 0.5, 'q20': 0.25,
-    },
+  'fabiane': (
+    name: 'Fabiane Sorbar',
+    yes: {'q01', 'q04', 'q05', 'q13'},
   ),
-  Professor(
-    id: 'marcel',
-    name: 'Marcel',
-    answerProfile: {
-      'q01': 1.0, 'q02': 0.0, 'q03': 0.5, 'q04': 0.5, 'q05': 0.5,
-      'q06': 0.5, 'q07': 0.75, 'q08': 0.5, 'q09': 1.0, 'q10': 0.5,
-      'q11': 0.75, 'q12': 0.5, 'q13': 0.5, 'q14': 0.5, 'q15': 1.0,
-      'q16': 0.5, 'q17': 0.25, 'q18': 0.5, 'q19': 1.0, 'q20': 0.0,
-    },
+  'jhoni': (
+    name: 'Jhoni Eldor Schulz',
+    yes: {'q05', 'q12'},
   ),
-  Professor(
-    id: 'hiago',
-    name: 'Hiago',
-    answerProfile: {
-      'q01': 0.5, 'q02': 0.5, 'q03': 0.5, 'q04': 0.25, 'q05': 0.75,
-      'q06': 0.5, 'q07': 0.25, 'q08': 0.5, 'q09': 0.5, 'q10': 1.0,
-      'q11': 0.5, 'q12': 0.75, 'q13': 0.75, 'q14': 0.75, 'q15': 0.75,
-      'q16': 0.5, 'q17': 0.25, 'q18': 1.0, 'q19': 0.25, 'q20': 0.5,
-    },
+  'vinicius': (
+    name: 'Vinícius Tessele',
+    yes: {'q05', 'q07', 'q12'},
   ),
-  Professor(
-    id: 'wander',
-    name: 'Wander',
-    answerProfile: {
-      'q01': 1.0, 'q02': 0.75, 'q03': 0.5, 'q04': 0.5, 'q05': 0.5,
-      'q06': 0.25, 'q07': 1.0, 'q08': 0.25, 'q09': 1.0, 'q10': 0.25,
-      'q11': 0.25, 'q12': 0.5, 'q13': 0.25, 'q14': 0.75, 'q15': 0.75,
-      'q16': 0.25, 'q17': 0.25, 'q18': 0.25, 'q19': 1.0, 'q20': 0.0,
-    },
+  'allan': (
+    name: 'Allan Bossoni Escher',
+    yes: {'q01', 'q06'},
   ),
-  Professor(
-    id: 'alan',
-    name: 'Alan',
-    answerProfile: {
-      'q01': 0.5, 'q02': 0.5, 'q03': 0.75, 'q04': 0.25, 'q05': 0.75,
-      'q06': 0.5, 'q07': 0.25, 'q08': 0.5, 'q09': 0.75, 'q10': 0.75,
-      'q11': 0.75, 'q12': 1.0, 'q13': 1.0, 'q14': 0.5, 'q15': 1.0,
-      'q16': 0.5, 'q17': 0.25, 'q18': 0.5, 'q19': 0.25, 'q20': 0.25,
-    },
+  'hiago': (
+    name: 'Hiago Bruno Costa Pereira',
+    yes: {'q03', 'q06', 'q07', 'q08', 'q10', 'q13'},
   ),
-  Professor(
-    id: 'fabiano',
-    name: 'Fabiano',
-    answerProfile: {
-      'q01': 0.5, 'q02': 0.5, 'q03': 0.75, 'q04': 0.75, 'q05': 0.25,
-      'q06': 1.0, 'q07': 0.25, 'q08': 0.0, 'q09': 0.5, 'q10': 1.0,
-      'q11': 0.0, 'q12': 0.75, 'q13': 1.0, 'q14': 1.0, 'q15': 0.25,
-      'q16': 0.25, 'q17': 0.0, 'q18': 0.5, 'q19': 0.25, 'q20': 1.0,
-    },
+  'daniele': (
+    name: 'Daniele Wolfart Mantovani',
+    yes: {'q04', 'q05', 'q08'},
   ),
+  'renato': (
+    name: 'Renato Estevam Pereira',
+    yes: {'q06', 'q07', 'q08', 'q10', 'q13'},
+  ),
+  'vander': (
+    name: 'Vander',
+    yes: {'q01', 'q03', 'q06', 'q09', 'q10', 'q11'},
+  ),
+};
+
+/// Converte o conjunto de tags "sim" no mapa de respostas esperadas (1.0/0.0)
+/// que o motor consome.
+Map<String, double> _buildProfile(Set<String> yes) => {
+      for (final q in questions) q.id: yes.contains(q.id) ? 1.0 : 0.0,
+    };
+
+/// Lista de professores derivada de [_profiles]. É o que o jogo usa.
+final List<Professor> professors = [
+  for (final entry in _profiles.entries)
+    Professor(
+      id: entry.key,
+      name: entry.value.name,
+      answerProfile: _buildProfile(entry.value.yes),
+    ),
 ];

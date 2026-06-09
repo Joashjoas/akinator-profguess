@@ -5,6 +5,7 @@ import 'screens/home_screen.dart';
 import 'screens/question_screen.dart';
 import 'screens/result_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/app_background.dart';
 
 void main() {
   runApp(const ProfGuessApp());
@@ -44,19 +45,21 @@ class _GameRootState extends State<GameRoot> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) {
-          final screen = _screenFor(_controller.status);
-          // Transição suave entre as telas.
-          return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            child: KeyedSubtree(
-              key: ValueKey(_screenKey(_controller.status)),
-              child: screen,
-            ),
-          );
-        },
+      body: AppBackground(
+        child: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            final screen = _screenFor(_controller.status);
+            // Transição suave entre as telas.
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              child: KeyedSubtree(
+                key: ValueKey(_screenKey(_controller.status)),
+                child: screen,
+              ),
+            );
+          },
+        ),
       ),
     );
   }

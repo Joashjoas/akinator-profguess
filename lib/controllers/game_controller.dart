@@ -36,6 +36,43 @@ class GameController extends ChangeNotifier {
 
   int get questionsAsked => _engine.questionsAsked;
 
+  /// "Placar" atual: probabilidade (pontuação) de cada professor, da maior para
+  /// a menor. A UI usa isso para mostrar como cada candidato está se saindo.
+  List<({Professor professor, double probability})> get scores =>
+      _engine.scores;
+
+  /// Quanto a pergunta atual "espera" de cada professor: 1.0 = ele responderia
+  /// sim, 0.0 = não. Usado para exibir, no placar, o que cada candidato diria à
+  /// pergunta em tela. Retorna null quando não há pergunta ativa.
+  double? expectedForCurrent(Professor professor) {
+    final question = _currentQuestion;
+    if (question == null) return null;
+    return professor.expected(question.id);
+  }
+
+  /// Limite de perguntas por partida (para exibir "Pergunta X de até N").
+  int get maxQuestions => GuessEngine.maxQuestions;
+
+  /// Pode voltar para a pergunta anterior?
+  bool get canGoBack => _status == GameStatus.asking && _engine.canUndo;
+
+  /// Frases curtas que justificam o palpite atual, montadas a partir das
+  /// características que o jogador confirmou e que o professor possui.
+  /// Vazio quando não há nada marcante a destacar.
+  List<String> get guessReasons {
+    final guess = currentGuess;
+    final reasons = <String>[];
+    for (final step in _engine.history) {
+      final confirmed =
+          step.answer == Answer.yes || step.answer == Answer.probablyYes;
+      final hasTrait = guess.expected(step.question.id) >= 0.5;
+      if (confirmed && hasTrait && step.question.trait.isNotEmpty) {
+        reasons.add(step.question.trait);
+      }
+    }
+    return reasons;
+  }
+
   /// Inicia uma nova partida do zero.
   void start() {
     _engine.reset();
@@ -48,6 +85,13 @@ class GameController extends ChangeNotifier {
     final question = _currentQuestion;
     if (question == null || _status != GameStatus.asking) return;
     _engine.submitAnswer(question, answer);
+    _advance();
+  }
+
+  /// Volta para a pergunta anterior, desfazendo a última resposta.
+  void goBack() {
+    if (!canGoBack) return;
+    _engine.undoLast();
     _advance();
   }
 
@@ -66,7 +110,7 @@ class GameController extends ChangeNotifier {
     if (_status != GameStatus.guessing) return;
     _engine.rejectGuess(currentGuess);
 
-    if (_engine.hasViableCandidates && _engine.questionsAsked < 15) {
+    if (_engine.canContinue) {
       _status = GameStatus.asking;
       _advance();
     } else {

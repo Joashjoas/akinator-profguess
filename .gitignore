@@ -46,3 +46,6 @@ app.*.map.json
 
 # Documento de especificacao da atividade (nao faz parte do app)
 SPEC-ProfGuess.md
+
+# Configuracao local de ferramentas
+.claude/

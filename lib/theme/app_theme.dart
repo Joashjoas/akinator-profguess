@@ -10,6 +10,19 @@ class AppColors {
   static const Color gold = Color(0xFFFBBF24);
   static const Color background = Color(0xFF1B1633);
   static const Color surface = Color(0xFF2A2350);
+
+  // Tons usados nas superfícies translúcidas (cards de vidro, botões tonais).
+  static const Color backgroundTop = Color(0xFF241B45);
+  static const Color backgroundBottom = Color(0xFF130F26);
+  static const Color glass = Color(0x14FFFFFF); // branco ~8%
+  static const Color glassBorder = Color(0x1FFFFFFF); // branco ~12%
+
+  /// Gradiente de fundo do app, do topo (mais claro) para a base (mais escuro).
+  static const LinearGradient backgroundGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [backgroundTop, backgroundBottom],
+  );
 }
 
 class AppTheme {
@@ -30,11 +43,16 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.indigo,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
           ),
-          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
         ),
       ),
     );
