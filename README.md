@@ -18,6 +18,15 @@ ajusta a probabilidade de cada professor até arriscar um palpite.
 
 Pré-requisito: Flutter SDK instalado.
 
+As pastas de plataforma (`android/`, `ios/`, `windows/`, etc.) não estão no
+repositório. Gere-as rodando:
+
+```bash
+flutter create .
+```
+
+Depois:
+
 ```bash
 flutter pub get
 flutter run            # no emulador/dispositivo conectado
