@@ -54,7 +54,11 @@ class GuessEngine {
   static const int _minQuestionsBeforeGuess = 6;
 
   /// Confiança mínima do líder para palpitar antecipadamente.
-  static const double _confidenceThreshold = 0.70;
+  static const double _confidenceThreshold = 0.80;
+
+  /// Quando os dois primeiros candidatos concentram esta fração da probabilidade,
+  /// o motor prioriza a pergunta que mais os diferencia ("pergunta matadora").
+  static const double _tieThreshold = 0.75;
 
   int _questionsAsked = 0;
   int get questionsAsked => _questionsAsked;
@@ -157,11 +161,24 @@ class GuessEngine {
 
   /// Próxima pergunta a fazer, ou `null` quando é hora de palpitar.
   ///
-  /// Escolhe a pergunta ainda não feita com maior **ganho de informação**: a
-  /// que, em média, mais reduz a entropia da distribuição de candidatos.
+  /// Quando os dois primeiros candidatos concentram mais de [_tieThreshold] da
+  /// probabilidade total, prioriza a **pergunta matadora**: aquela cujas
+  /// respostas esperadas mais divergem entre os dois, resolvendo o empate
+  /// diretamente. Caso contrário usa ganho de informação normal.
   Question? nextQuestion() {
     if (shouldGuess) return null;
 
+    // Empate entre os dois primeiros? Tenta matar com pergunta específica.
+    final leader = currentGuess;
+    final runnerUp = _runnerUpProfessor();
+    final combined = (_probabilities[leader.id] ?? 0) +
+        (_probabilities[runnerUp.id] ?? 0);
+    if (combined > _tieThreshold) {
+      final killer = _killerQuestion(runnerUp);
+      if (killer != null) return killer;
+    }
+
+    // Caso geral: ganho de informação máximo.
     final entropyBefore = _entropyOfCurrent();
 
     Question? best;
@@ -170,14 +187,12 @@ class GuessEngine {
     for (final q in _questions) {
       if (_askedQuestionIds.contains(q.id)) continue;
 
-      // Probabilidade (esperada) de a resposta ser "sim" para esta pergunta.
       var pYes = 0.0;
       for (final p in _professors) {
         pYes += (_probabilities[p.id] ?? 0) * p.expected(q.id);
       }
       final pNo = 1 - pYes;
 
-      // Entropia esperada depois de conhecer a resposta.
       final hYes = _conditionalEntropy(q, yes: true, mass: pYes);
       final hNo = _conditionalEntropy(q, yes: false, mass: pNo);
       final expectedEntropy = pYes * hYes + pNo * hNo;
@@ -189,23 +204,50 @@ class GuessEngine {
       }
     }
 
-    // Se nenhuma pergunta restante traz informação relevante, vamos palpitar.
     if (best == null || bestGain < _minInfoGain) return null;
     return best;
   }
 
+  /// Retorna a pergunta não feita que mais diferencia o líder do vice-líder,
+  /// ou `null` se nenhuma pergunta ainda não feita os distingue.
+  Question? _killerQuestion(Professor runnerUp) {
+    final leader = currentGuess;
+    Question? killer;
+    var bestDiff = 0.0;
+    for (final q in _questions) {
+      if (_askedQuestionIds.contains(q.id)) continue;
+      final diff = (leader.expected(q.id) - runnerUp.expected(q.id)).abs();
+      if (diff > bestDiff) {
+        bestDiff = diff;
+        killer = q;
+      }
+    }
+    // Só conta como "matadora" se realmente distingue (diferença >= 0.5).
+    return (bestDiff >= 0.5) ? killer : null;
+  }
+
   /// Verdadeiro quando o motor já tem confiança (ou perguntas) suficiente.
   ///
-  /// (perguntas >= 6 E P(líder) >= 0.70 E P(líder) >= 2 x P(vice))
+  /// (perguntas >= 6 E P(líder) >= 0.80 E P(líder) >= 3 x P(vice))
   ///   ou (perguntas >= 15)
+  ///
+  /// Exige 3× em vez de 2× para evitar palpitar cedo quando dois candidatos
+  /// ainda estão próximos e existe alguma pergunta que os distingue.
   bool get shouldGuess {
     if (_questionsAsked >= maxQuestions) return true;
     if (_questionsAsked < _minQuestionsBeforeGuess) return false;
 
     final leaderProb = confidence;
     final runnerUpProb = _runnerUpProbability();
+
+    // Ainda há uma pergunta matadora disponível? Então não palpite ainda.
+    if (leaderProb + runnerUpProb > _tieThreshold) {
+      final killer = _killerQuestion(_runnerUpProfessor());
+      if (killer != null) return false;
+    }
+
     return leaderProb >= _confidenceThreshold &&
-        leaderProb >= 2 * runnerUpProb;
+        leaderProb >= 3 * runnerUpProb;
   }
 
   /// Chamado quando o jogador diz que o palpite estava errado: elimina o
@@ -225,13 +267,21 @@ class GuessEngine {
     _probabilities.updateAll((_, value) => value / total);
   }
 
-  double _runnerUpProbability() {
+  double _runnerUpProbability() => _probabilities[_runnerUpProfessor().id] ?? 0;
+
+  Professor _runnerUpProfessor() {
     final leaderId = currentGuess.id;
-    var second = 0.0;
-    _probabilities.forEach((id, prob) {
-      if (id != leaderId && prob > second) second = prob;
-    });
-    return second;
+    Professor? second;
+    var secondProb = 0.0;
+    for (final p in _professors) {
+      if (p.id == leaderId) continue;
+      final prob = _probabilities[p.id] ?? 0;
+      if (prob > secondProb) {
+        secondProb = prob;
+        second = p;
+      }
+    }
+    return second ?? _professors.first;
   }
 
   /// Entropia de Shannon (em bits) da distribuição de probabilidades atual.

@@ -31,8 +31,10 @@ const List<Question> questions = [
   Question(id: 'q10', text: 'Escreve bastante no quadro?', trait: 'escreve bastante no quadro'),
   Question(id: 'q11', text: 'Costuma trabalhar os alunos com projetos?', trait: 'trabalha com projetos'),
   Question(id: 'q12', text: 'Trabalha com programação?', trait: 'trabalha com programação'),
-  Question(id: 'q13', text: 'Trabalha como gestor?', trait: 'trabalha como gestor'),
+  Question(id: 'q13', text: 'Trabalha como gestor ou coordenador?', trait: 'trabalha como gestor ou coordenador'),
   Question(id: 'q14', text: 'Trabalha com redes?', trait: 'trabalha com redes'),
+  Question(id: 'q15', text: 'Está dando aula para sua turma neste semestre?', trait: 'dá aula para a turma este semestre'),
+  Question(id: 'q16', text: 'O professor que você está pensando pinta o cabelo?', trait: 'pinta o cabelo'),
 ];
 
 /// Cada entrada é `id do professor` -> (nome, conjunto de perguntas "sim").
@@ -40,23 +42,23 @@ const List<Question> questions = [
 const Map<String, ({String name, Set<String> yes})> _profiles = {
   'jeferson_vorpagel': (
     name: 'Jefferson dos Santos Vorpagel',
-    yes: {'q02', 'q06', 'q07', 'q08', 'q11', 'q13'},
+    yes: {'q02', 'q06', 'q07', 'q08', 'q11', 'q13', 'q15'},
   ),
   'willian': (
     name: 'Willian Douglas Ferrari Mendonça',
-    yes: {'q01', 'q02', 'q03', 'q05', 'q11', 'q12'},
+    yes: {'q01', 'q02', 'q03', 'q05', 'q11', 'q12', 'q15'},
   ),
   'marcos_guido': (
     name: 'Marcos Antonio Guido',
-    yes: {'q03', 'q06', 'q08', 'q09', 'q10', 'q13', 'q14'},
+    yes: {'q03', 'q06', 'q08', 'q09', 'q10', 'q12', 'q13', 'q14', 'q15'},
   ),
   'jefferson_speck': (
     name: 'Jefferson Rodrigo Speck',
-    yes: {'q01', 'q02', 'q05', 'q07', 'q08', 'q10', 'q11', 'q12'},
+    yes: {'q01', 'q02', 'q05', 'q07', 'q08', 'q10', 'q11', 'q12', 'q15', 'q16'},
   ),
   'guilherme_alves': (
     name: 'Guilherme Alves',
-    yes: {'q01', 'q05', 'q07', 'q10', 'q11', 'q12'},
+    yes: {'q01', 'q05', 'q07', 'q10', 'q11', 'q12', 'q15'},
   ),
   'andre_dorr': (
     name: 'André Luis Dorr',
@@ -64,7 +66,7 @@ const Map<String, ({String name, Set<String> yes})> _profiles = {
   ),
   'leticia': (
     name: 'Letícia Siguinolfi de Lima',
-    yes: {'q01', 'q04', 'q05', 'q07'},
+    yes: {'q01', 'q04', 'q05', 'q07', 'q16'},
   ),
   'marcel': (
     name: 'Marcel Augusto Colling',
