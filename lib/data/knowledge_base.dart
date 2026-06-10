@@ -26,7 +26,7 @@ const List<Question> questions = [
   Question(id: 'q05', text: 'Costuma usar camiseta nas aulas?', trait: 'costuma usar camiseta'),
   Question(id: 'q06', text: 'Costuma usar camisa social nas aulas?', trait: 'costuma usar camisa social'),
   Question(id: 'q07', text: 'Fala bastante sobre mercado de trabalho?', trait: 'fala sobre mercado de trabalho'),
-  Question(id: 'q08', text: 'Gosta de trabalhar seminários com os alunos?', trait: 'trabalha com seminários'),
+  Question(id: 'q08', text: 'Costuma pedir apresentações ou debates para os alunos?', trait: 'costuma pedir apresentações ou debates'),
   Question(id: 'q09', text: 'Passa exercícios em laboratório?', trait: 'passa exercícios em laboratório'),
   Question(id: 'q10', text: 'Escreve bastante no quadro?', trait: 'escreve bastante no quadro'),
   Question(id: 'q11', text: 'Costuma trabalhar os alunos com projetos?', trait: 'trabalha com projetos'),
@@ -35,6 +35,9 @@ const List<Question> questions = [
   Question(id: 'q14', text: 'Trabalha com redes?', trait: 'trabalha com redes'),
   Question(id: 'q15', text: 'Está dando aula para sua turma neste semestre?', trait: 'dá aula para a turma este semestre'),
   Question(id: 'q16', text: 'O professor que você está pensando pinta o cabelo?', trait: 'pinta o cabelo'),
+  Question(id: 'q17', text: 'Esse professor é de Marechal Cândido Rondon?', trait: 'é de Marechal Cândido Rondon'),
+  Question(id: 'q18', text: 'Esse professor utiliza slides com frequência?', trait: 'utiliza slides com frequência'),
+  Question(id: 'q19', text: 'Esse professor já deu uma matéria sem nenhum código?', trait: 'já deu matéria sem código'),
 ];
 
 /// Cada entrada é `id do professor` -> (nome, conjunto de perguntas "sim").
@@ -42,35 +45,35 @@ const List<Question> questions = [
 const Map<String, ({String name, Set<String> yes})> _profiles = {
   'jeferson_vorpagel': (
     name: 'Jefferson dos Santos Vorpagel',
-    yes: {'q02', 'q06', 'q07', 'q08', 'q11', 'q13', 'q15'},
+    yes: {'q02', 'q06', 'q07', 'q08', 'q11', 'q13', 'q15', 'q18'},
   ),
   'willian': (
     name: 'Willian Douglas Ferrari Mendonça',
-    yes: {'q01', 'q02', 'q03', 'q05', 'q11', 'q12', 'q15'},
+    yes: {'q01', 'q02', 'q03', 'q05', 'q11', 'q12', 'q15', 'q18'},
   ),
   'marcos_guido': (
     name: 'Marcos Antonio Guido',
-    yes: {'q03', 'q06', 'q08', 'q09', 'q10', 'q12', 'q13', 'q14', 'q15'},
+    yes: {'q03', 'q06', 'q08', 'q09', 'q10', 'q12', 'q13', 'q14', 'q15', 'q18'},
   ),
   'jefferson_speck': (
     name: 'Jefferson Rodrigo Speck',
-    yes: {'q01', 'q02', 'q05', 'q07', 'q08', 'q10', 'q11', 'q12', 'q15', 'q16'},
+    yes: {'q01', 'q02', 'q05', 'q07', 'q08', 'q11', 'q12', 'q15', 'q16', 'q17', 'q18'},
   ),
   'guilherme_alves': (
     name: 'Guilherme Alves',
-    yes: {'q01', 'q05', 'q07', 'q10', 'q11', 'q12', 'q15'},
+    yes: {'q01', 'q05', 'q07', 'q10', 'q11', 'q12', 'q15', 'q18', 'q19'},
   ),
   'andre_dorr': (
     name: 'André Luis Dorr',
-    yes: {'q01', 'q02', 'q05'},
+    yes: {'q01', 'q02', 'q05', 'q18'},
   ),
   'leticia': (
     name: 'Letícia Siguinolfi de Lima',
-    yes: {'q01', 'q04', 'q05', 'q07', 'q16'},
+    yes: {'q01', 'q04', 'q05', 'q07', 'q16', 'q18', 'q19'},
   ),
   'marcel': (
     name: 'Marcel Augusto Colling',
-    yes: {'q02', 'q06', 'q07', 'q08'},
+    yes: {'q02', 'q06', 'q07', 'q08', 'q17', 'q18', 'q19'},
   ),
   'fabiano': (
     name: 'Fabiano do Carmo Dicheti',
@@ -78,11 +81,11 @@ const Map<String, ({String name, Set<String> yes})> _profiles = {
   ),
   'fabiane': (
     name: 'Fabiane Sorbar',
-    yes: {'q01', 'q04', 'q05', 'q13'},
+    yes: {'q01', 'q04', 'q05', 'q13', 'q18'},
   ),
   'jhoni': (
     name: 'Jhoni Eldor Schulz',
-    yes: {'q05', 'q12'},
+    yes: {'q05', 'q12', 'q17', 'q18'},
   ),
   'vinicius': (
     name: 'Vinícius Tessele',
@@ -90,23 +93,23 @@ const Map<String, ({String name, Set<String> yes})> _profiles = {
   ),
   'allan': (
     name: 'Allan Bossoni Escher',
-    yes: {'q01', 'q06'},
+    yes: {'q01', 'q06', 'q18', 'q19'},
   ),
   'hiago': (
     name: 'Hiago Bruno Costa Pereira',
-    yes: {'q03', 'q06', 'q07', 'q08', 'q10', 'q13'},
+    yes: {'q02', 'q03', 'q05', 'q07', 'q08', 'q10', 'q13', 'q18', 'q19'},
   ),
   'daniele': (
     name: 'Daniele Wolfart Mantovani',
-    yes: {'q04', 'q05', 'q08'},
+    yes: {'q04', 'q05', 'q08', 'q18'},
   ),
   'renato': (
     name: 'Renato Estevam Pereira',
-    yes: {'q06', 'q07', 'q08', 'q10', 'q13'},
+    yes: {'q06', 'q07', 'q08', 'q10', 'q13', 'q18', 'q19'},
   ),
   'vander': (
     name: 'Vander',
-    yes: {'q01', 'q03', 'q06', 'q09', 'q10', 'q11'},
+    yes: {'q01', 'q03', 'q06', 'q09', 'q10', 'q11', 'q18'},
   ),
 };
 
